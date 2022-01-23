@@ -26,7 +26,12 @@
 #include <config.h>
 #include <asm/arch/dmc.h>
 #include "common_setup.h"
+
+#ifdef CONFIG_ITOP4412
+#include "itop4412_setup.h"
+#else
 #include "exynos4_setup.h"
+#endif
 
 struct mem_timings mem = {
 	.direct_cmd_msr = {
@@ -48,6 +53,22 @@ struct mem_timings mem = {
 	.dll_resync = FORCE_DLL_RESYNC,
 	.dll_on = DLL_CONTROL_ON,
 };
+
+#define NR_TZASC_BANKS 4
+
+/* Allow non-secure and secure access to all memory */
+#define RA0_VAL 0xf0000000
+
+static void tzasc_init(void) {
+	unsigned int start = samsung_get_base_dmc_tzasc();
+
+	unsigned int end = start + (DMC_OFFSET * (NR_TZASC_BANKS - 1));
+	for (; start <= end; start += DMC_OFFSET) {
+		struct exynos4412_tzasc *asc = (struct exynos4412_tzasc *)start;
+		writel(RA0_VAL, &asc->region_attributes_0);
+	}
+}
+
 static void phy_control_reset(int ctrl_no, struct exynos4_dmc *dmc)
 {
 	if (ctrl_no) {
@@ -175,7 +196,7 @@ void mem_ctrl_init(int reset)
 	 * 0: full_sync
 	 */
 	writel(1, ASYNC_CONFIG);
-#ifdef CONFIG_ORIGEN
+#ifdef CONFIG_ITOP4412
 	/* Interleave: 2Bit, Interleave_bit1: 0x15, Interleave_bit0: 0x7 */
 	writel(APB_SFR_INTERLEAVE_CONF_VAL, EXYNOS4_MIU_BASE +
 		APB_SFR_INTERLEAVE_CONF_OFFSET);
@@ -210,4 +231,5 @@ void mem_ctrl_init(int reset)
 	dmc = (struct exynos4_dmc *)(samsung_get_base_dmc_ctrl()
 					+ DMC_OFFSET);
 	dmc_init(dmc);
+	tzasc_init();
 }

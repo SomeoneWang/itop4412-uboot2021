@@ -42,6 +42,45 @@ u32 irom_ptr_table[] = {
 	[USB_INDEX] = 0x02020070,	/* iROM Function Pointer-USB boot*/
 	};
 
+static void doled1(int en)
+{
+	unsigned long x;
+	if (en) x = 1;
+	else x = 0;
+	*(volatile unsigned long *)0x11000100 = 1; // GPL2CON
+	*(volatile unsigned long *)0x11000104 = x; // GPL2DAT
+}
+
+static void doled2(int en)
+{
+	unsigned long x;
+	if (en) x = 2;
+	else x = 0;
+	*(volatile unsigned long *)0x11000068 = 0;    // GPK1PUD
+	*(volatile unsigned long *)0x11000060 = 0x10; // GPK1CON
+	*(volatile unsigned long *)0x11000064 = x;    // GPK1DAT
+}
+
+void led_test(void)
+{
+	volatile unsigned long i = 0;
+	volatile unsigned long * ram;
+	volatile unsigned long * GPL2CON;
+	volatile unsigned long * GPL2DAT;
+	GPL2CON = (volatile unsigned long *)0x11000100;
+	GPL2DAT = (volatile unsigned long *)0x11000104;
+	ram     = (volatile unsigned long *)0x43E00000;
+	*GPL2CON  = 1;
+	*GPL2DAT  = 0;
+	*ram      = 1;
+	while (1)
+	{
+		*GPL2DAT = *ram;
+		*ram    ^= 1;
+		for(i = 0;i < 50000;i++);
+	}
+}
+
 void *get_irom_func(int index)
 {
 	return (void *)*(u32 *)irom_ptr_table[index];
@@ -230,9 +269,12 @@ void copy_uboot_to_ram(void)
 		break;
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	case BOOT_MODE_EMMC:
+	case BOOT_MODE_EMMC_SD:
 		/* Set the FSYS1 clock divisor value for EMMC boot */
+#ifndef CONFIG_ITOP4412
 		emmc_boot_clk_div_set();
-
+#endif
+		printascii("emmc start up!\n");
 		copy_bl2_from_emmc = get_irom_func(EMMC44_INDEX);
 		end_bootop_from_emmc = get_irom_func(EMMC44_END_INDEX);
 

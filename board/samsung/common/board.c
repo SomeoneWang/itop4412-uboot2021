@@ -57,8 +57,9 @@ static int get_boot_mmc_dev(void)
 	u32 mode = readl(EXYNOS4_OP_MODE) & 0x1C;
 
 	if (mode == 0x04)
-		return 2; /* MMC2: SD */
-
+		return 0; /* MMC2: SD */
+	else if (mode == 8 || mode == 40)
+		return 1;
 	/* MMC0: eMMC or unknown */
 	return 0;
 }

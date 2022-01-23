@@ -428,6 +428,25 @@ struct exynos5420_tzasc {
 	unsigned int memconfig1;
 };
 
+struct exynos4412_tzasc {
+	unsigned char res1[0x100];
+	unsigned int region_setup_low_0; // 100
+	unsigned int region_setup_high_0; // 104
+	unsigned int region_attributes_0; // 108
+	unsigned int res2; // 10c
+	unsigned int region_setup_low_1; // 110
+	unsigned int region_setup_high_1; // 114
+	unsigned int region_setup_attributes_1; // 118
+	unsigned int res3;
+	unsigned int region_setup_low_2; // 120
+	unsigned int region_setup_high_2; // 124
+	unsigned int region_setup_attributes_2; // 128
+	unsigned int res4;
+	unsigned int region_setup_low_3; // 130
+	unsigned int region_setup_high_3; // 134
+	unsigned int region_attributes_3; // 138
+};
+
 enum ddr_mode {
 	DDR_MODE_DDR2,
 	DDR_MODE_DDR3,

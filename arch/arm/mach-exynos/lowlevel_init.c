@@ -170,6 +170,25 @@ static void secondary_cores_configure(void)
 extern void relocate_wait_code(void);
 #endif
 
+static void doled1(int en)
+{
+	unsigned long x;
+	if (en) x = 1;
+	else x = 0;
+	*(volatile unsigned long *)0x11000100 = 1; // GPL2CON
+	*(volatile unsigned long *)0x11000104 = x; // GPL2DAT
+}
+
+static void doled2(int en)
+{
+	unsigned long x;
+	if (en) x = 2;
+	else x = 0;
+	*(volatile unsigned long *)0x11000068 = 0;    // GPK1PUD
+	*(volatile unsigned long *)0x11000060 = 0x10; // GPK1CON
+	*(volatile unsigned long *)0x11000064 = x;    // GPK1DAT
+}
+
 int do_lowlevel_init(void)
 {
 	uint32_t reset_status;
@@ -220,13 +239,17 @@ int do_lowlevel_init(void)
 #ifdef CONFIG_DEBUG_UART
 #if (defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_SERIAL_SUPPORT)) || \
     !defined(CONFIG_SPL_BUILD)
+#ifdef CONFIG_ITOP4412
+		exynos_pinmux_config(PERIPH_ID_UART2, PINMUX_FLAG_NONE);
+#else
 		exynos_pinmux_config(PERIPH_ID_UART3, PINMUX_FLAG_NONE);
+#endif
 		debug_uart_init();
 #endif
 #endif
 		mem_ctrl_init(actions & DO_MEM_RESET);
 		tzpc_init();
 	}
-
+	printascii("spl init!\n");
 	return actions & DO_WAKEUP;
 }
